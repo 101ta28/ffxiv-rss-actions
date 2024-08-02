@@ -40,13 +40,25 @@ jobs:
         run: |
           python rss_parser.py "$RSS_URL" "$STATE_FILE"
 
+      - name: Check for changes
+        id: check_changes
+        run: |
+          git add news_state.json topics_state.json
+          if git diff-index --quiet HEAD --; then
+            echo "No changes detected"
+            echo "no_changes=true" >> $GITHUB_ENV
+          else
+            echo "Changes detected"
+            echo "no_changes=false" >> $GITHUB_ENV
+          fi
+
       - name: Commit and push changes
+        if: env.no_changes == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "action@github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git add news_state.json topics_state.json
           git commit -m "Update state files"
           git push
