@@ -1,0 +1,36 @@
+name: ffxiv-rss-actions
+on:
+  schedule:
+    # every 15 minutes
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+jobs:
+  ffxiv-rss:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install feedparser requests beautifulsoup4
+
+      - name: Fetch and send RSS News
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          RSS_NEWS_URL="https://jp.finalfantasyxiv.com/lodestone/news/news.xml"
+          python rss_parser.py $RSS_NEWS_URL $WEBHOOK_URL
+
+      - name: Fetch and send RSS Topics
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          RSS_TOPICS_URL="https://jp.finalfantasyxiv.com/lodestone/news/topics.xml"
+          python rss_parser.py $RSS_TOPICS_URL $WEBHOOK_URL
