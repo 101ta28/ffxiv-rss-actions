@@ -24,17 +24,24 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
         print("No new entries found in the RSS feed.")
         return
 
+    # 前回の状態を読み込む
     if os.path.exists(state_file):
         with open(state_file, 'r') as f:
             last_entries = json.load(f)
     else:
         last_entries = []
 
+    # 新しいエントリーをフィルタリング
     new_entries = [entry for entry in feed.entries if entry.id not in last_entries]
 
     if not new_entries:
         print("No new entries to process.")
         return
+
+    # 新しいエントリーのIDを先に保存
+    latest_ids = [entry.id for entry in feed.entries[:10]]
+    with open(state_file, 'w') as f:
+        json.dump(latest_ids, f)
 
     for entry in new_entries:
         title = entry.get("title", "No title")
@@ -105,9 +112,6 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
 
         send_request_with_retry(webhook_url, data)
 
-    latest_ids = [entry.id for entry in feed.entries[:10]]
-    with open(state_file, 'w') as f:
-        json.dump(latest_ids, f)
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
