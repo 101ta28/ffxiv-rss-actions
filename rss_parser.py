@@ -3,8 +3,20 @@ import requests
 import sys
 import os
 import json
+import time
 from bs4 import BeautifulSoup
 
+def send_request_with_retry(webhook_url, data, retries=5, wait=60):
+    for attempt in range(retries):
+        response = requests.post(webhook_url, json=data)
+        if response.status_code == 429:
+            retry_after = int(response.headers.get("Retry-After", wait))
+            print(f"Rate limit exceeded. Retrying in {retry_after} seconds...")
+            time.sleep(retry_after)
+        else:
+            response.raise_for_status()
+            return
+    raise Exception("Failed to send request after several retries")
 
 def fetch_and_send_rss(rss_url, webhook_url, state_file):
     feed = feedparser.parse(rss_url)
@@ -12,14 +24,12 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
         print("No new entries found in the RSS feed.")
         return
 
-    # 前回の状態を読み込む
     if os.path.exists(state_file):
         with open(state_file, 'r') as f:
             last_entries = json.load(f)
     else:
         last_entries = []
 
-    # 新しいエントリーをフィルタリング
     new_entries = [entry for entry in feed.entries if entry.id not in last_entries]
 
     if not new_entries:
@@ -93,14 +103,11 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
                 ]
             }
 
-        response = requests.post(webhook_url, json=data)
-        response.raise_for_status()
+        send_request_with_retry(webhook_url, data)
 
-    # 最新のエントリーIDを保存
     latest_ids = [entry.id for entry in feed.entries[:10]]
     with open(state_file, 'w') as f:
         json.dump(latest_ids, f)
-
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
