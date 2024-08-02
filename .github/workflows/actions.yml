@@ -47,4 +47,4 @@ jobs:
           git remote set-url origin main
           git add news_state.json topics_state.json
           git commit -m "Update state files"
-          git push origin main
+          git push
