@@ -38,82 +38,82 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
 
     if not new_entries:
         print("No new entries to process.")
-        return
+    else:
+        # 新しいエントリーのIDを既存のリストに追加して保存
+        latest_ids = [entry.id for entry in new_entries] + last_entries
+        latest_ids = latest_ids[:100]  # 必要に応じて保存するIDの数を調整
+        with open(state_file, "w") as f:
+            json.dump(latest_ids, f, ensure_ascii=False, indent=4)
 
-    # 新しいエントリーのIDを既存のリストに追加して保存
-    latest_ids = [entry.id for entry in new_entries] + last_entries
-    latest_ids = latest_ids[:100]  # 必要に応じて保存するIDの数を調整
-    with open(state_file, "w") as f:
-        json.dump(latest_ids, f, ensure_ascii=False, indent=4)
+        for entry in new_entries:
+            title = entry.get("title", "No title")
+            link = entry.get("link", "No link")
+            summary = entry.get("summary", "No description")
+            category = entry.get("category", "トピックス").lower()
 
-    for entry in new_entries:
-        title = entry.get("title", "No title")
-        link = entry.get("link", "No link")
-        summary = entry.get("summary", "No description")
-        category = entry.get("category", "トピックス").lower()
-
-        info = {
-            "メンテナンス": {
-                "icon_url": "https://lds-img.finalfantasyxiv.com/h/U/6qzbI-6AwlXAfGhCBZU10jsoLA.png",
-                "color": 13413161,
-            },
-            "お知らせ": {
-                "icon_url": "https://lds-img.finalfantasyxiv.com/h/M/hu9OeFAv1VWVEJiaj9VWutGZDY.png",
-                "color": 13421772,
-            },
-            "障害情報": {
-                "icon_url": "https://lds-img.finalfantasyxiv.com/h/4/8PRdUkaKFa8R5BKeQjRyItGoxY.png",
-                "color": 10042685,
-            },
-            "アップデート": {
-                "icon_url": "https://lds-img.finalfantasyxiv.com/h/a/dFnS0OBVXIsmB74L65R7VHlpd8.png",
-                "color": 7051581,
-            },
-            "トピックス": {
-                "icon_url": "https://lds-img.finalfantasyxiv.com/h/W/_v7zlp4yma56rKwd8pIzU8wGFc.png",
-                "color": 13404201,
-            },
-        }
-
-        entry_info = info.get(category, info["トピックス"])
-
-        if category == "トピックス":
-            plain_text_summary = BeautifulSoup(summary, "html.parser").get_text()
-            data = {
-                "embeds": [
-                    {
-                        "color": entry_info["color"],
-                        "title": title,
-                        "url": link,
-                        "author": {
-                            "name": f"{category.capitalize()}",
-                            "icon_url": entry_info["icon_url"],
-                        },
-                        "description": plain_text_summary,
-                    }
-                ]
+            info = {
+                "メンテナンス": {
+                    "icon_url": "https://lds-img.finalfantasyxiv.com/h/U/6qzbI-6AwlXAfGhCBZU10jsoLA.png",
+                    "color": 13413161,
+                },
+                "お知らせ": {
+                    "icon_url": "https://lds-img.finalfantasyxiv.com/h/M/hu9OeFAv1VWVEJiaj9VWutGZDY.png",
+                    "color": 13421772,
+                },
+                "障害情報": {
+                    "icon_url": "https://lds-img.finalfantasyxiv.com/h/4/8PRdUkaKFa8R5BKeQjRyItGoxY.png",
+                    "color": 10042685,
+                },
+                "アップデート": {
+                    "icon_url": "https://lds-img.finalfantasyxiv.com/h/a/dFnS0OBVXIsmB74L65R7VHlpd8.png",
+                    "color": 7051581,
+                },
+                "トピックス": {
+                    "icon_url": "https://lds-img.finalfantasyxiv.com/h/W/_v7zlp4yma56rKwd8pIzU8wGFc.png",
+                    "color": 13404201,
+                },
             }
-        else:
-            soup = BeautifulSoup(entry.get("content")[0]["value"], "html.parser")
-            image_tag = soup.find("img", class_="mdl-img__visual")
-            image_url = image_tag["src"] if image_tag else ""
 
-            data = {
-                "embeds": [
-                    {
-                        "color": entry_info["color"],
-                        "title": title,
-                        "url": link,
-                        "author": {
-                            "name": f"{category.capitalize()}",
-                            "icon_url": entry_info["icon_url"],
-                        },
-                        "image": {"url": image_url} if image_url else {},
-                    }
-                ]
-            }
-        send_request_with_retry(webhook_url, data)
-        time.sleep(1 / 50)  # 1秒間に50リクエストを超えないようにする
+            entry_info = info.get(category, info["トピックス"])
+
+            if category == "トピックス":
+                plain_text_summary = BeautifulSoup(summary, "html.parser").get_text()
+                data = {
+                    "embeds": [
+                        {
+                            "color": entry_info["color"],
+                            "title": title,
+                            "url": link,
+                            "author": {
+                                "name": f"{category.capitalize()}",
+                                "icon_url": entry_info["icon_url"],
+                            },
+                            "description": plain_text_summary,
+                        }
+                    ]
+                }
+            else:
+                soup = BeautifulSoup(entry.get("content")[0]["value"], "html.parser")
+                image_tag = soup.find("img", class_="mdl-img__visual")
+                image_url = image_tag["src"] if image_tag else ""
+
+                data = {
+                    "embeds": [
+                        {
+                            "color": entry_info["color"],
+                            "title": title,
+                            "url": link,
+                            "author": {
+                                "name": f"{category.capitalize()}",
+                                "icon_url": entry_info["icon_url"],
+                            },
+                            "image": {"url": image_url} if image_url else {},
+                        }
+                    ]
+                }
+
+            send_request_with_retry(webhook_url, data)
+            time.sleep(1 / 50)  # 1秒間に50リクエストを超えないようにする
 
 
 if __name__ == "__main__":
