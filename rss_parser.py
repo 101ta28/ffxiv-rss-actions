@@ -112,11 +112,7 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
                     }
                 ]
             }
-
-        # Webhookに送信前に確認
-        print(json.dumps(data, ensure_ascii=False, indent=4))
-        # コメントを外すと実際に送信
-        # send_request_with_retry(webhook_url, data)
+        send_request_with_retry(webhook_url, data)
         time.sleep(1 / 50)  # 1秒間に50リクエストを超えないようにする
 
 
