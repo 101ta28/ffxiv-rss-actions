@@ -26,11 +26,11 @@ jobs:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }} 
           RSS_NEWS_URL: https://jp.finalfantasyxiv.com/lodestone/news/news.xml
         run: |
-          python rss_parser.py "$RSS_NEWS_URL" "$WEBHOOK_URL"
+          python rss_parser.py "$RSS_NEWS_URL"
 
       - name: Fetch and send RSS Topics
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }} 
           RSS_TOPICS_URL: https://jp.finalfantasyxiv.com/lodestone/news/topics.xml
         run: |
-          python rss_parser.py "$RSS_TOPICS_URL" "$WEBHOOK_URL"
+          python rss_parser.py "$RSS_TOPICS_URL"
