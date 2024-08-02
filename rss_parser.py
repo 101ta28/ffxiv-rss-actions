@@ -111,7 +111,7 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
             }
 
         send_request_with_retry(webhook_url, data)
-
+        time.sleep(1 / 50)  # 1秒間に50リクエストを超えないようにする
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
