@@ -6,6 +6,7 @@ import json
 import time
 from bs4 import BeautifulSoup
 
+
 def send_request_with_retry(webhook_url, data, retries=5, wait=60):
     for attempt in range(retries):
         response = requests.post(webhook_url, json=data)
@@ -18,6 +19,7 @@ def send_request_with_retry(webhook_url, data, retries=5, wait=60):
             return
     raise Exception("Failed to send request after several retries")
 
+
 def fetch_and_send_rss(rss_url, webhook_url, state_file):
     feed = feedparser.parse(rss_url)
     if not feed.entries:
@@ -26,7 +28,7 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
 
     # 前回の状態を読み込む
     if os.path.exists(state_file):
-        with open(state_file, 'r') as f:
+        with open(state_file, "r") as f:
             last_entries = json.load(f)
     else:
         last_entries = []
@@ -40,8 +42,8 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
 
     # 新しいエントリーのIDを先に保存
     latest_ids = [entry.id for entry in feed.entries[:10]]
-    with open(state_file, 'w') as f:
-        json.dump(latest_ids, f)
+    with open(state_file, "w") as f:
+        json.dump(latest_ids, f, ensure_ascii=False, indent=4)
 
     for entry in new_entries:
         title = entry.get("title", "No title")
@@ -113,6 +115,7 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
         send_request_with_retry(webhook_url, data)
         time.sleep(1 / 50)  # 1秒間に50リクエストを超えないようにする
 
+
 if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python rss_parser.py <RSS_URL>")
@@ -124,5 +127,7 @@ if __name__ == "__main__":
         print("WEBHOOK_URL environment variable is not set.")
         sys.exit(1)
 
-    state_file = os.path.join(os.path.dirname(__file__), f"{rss_url.split('/')[-2]}_state.json")
+    # ファイル名部分を取得して拡張子を除去
+    file_name = os.path.splitext(os.path.basename(rss_url))[0]
+    state_file = os.path.join(os.path.dirname(__file__), f"{file_name}_state.json")
     fetch_and_send_rss(rss_url, webhook_url, state_file)
