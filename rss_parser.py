@@ -2,17 +2,35 @@ import feedparser
 import requests
 import sys
 import os
+import json
 from bs4 import BeautifulSoup
 
 
-def fetch_and_send_rss(rss_url, webhook_url):
+def fetch_and_send_rss(rss_url, webhook_url, state_file):
     feed = feedparser.parse(rss_url)
-    if feed.entries:
-        latest_entry = feed.entries[0]
-        title = latest_entry.get("title", "No title")
-        link = latest_entry.get("link", "No link")
-        summary = latest_entry.get("summary", "No description")
-        category = latest_entry.get("category", "トピックス").lower()
+    if not feed.entries:
+        print("No new entries found in the RSS feed.")
+        return
+
+    # 前回の状態を読み込む
+    if os.path.exists(state_file):
+        with open(state_file, 'r') as f:
+            last_entries = json.load(f)
+    else:
+        last_entries = []
+
+    # 新しいエントリーをフィルタリング
+    new_entries = [entry for entry in feed.entries if entry.id not in last_entries]
+
+    if not new_entries:
+        print("No new entries to process.")
+        return
+
+    for entry in new_entries:
+        title = entry.get("title", "No title")
+        link = entry.get("link", "No link")
+        summary = entry.get("summary", "No description")
+        category = entry.get("category", "トピックス").lower()
 
         info = {
             "メンテナンス": {
@@ -56,7 +74,7 @@ def fetch_and_send_rss(rss_url, webhook_url):
                 ]
             }
         else:
-            soup = BeautifulSoup(latest_entry.get("content")[0]["value"], "html.parser")
+            soup = BeautifulSoup(entry.get("content")[0]["value"], "html.parser")
             image_tag = soup.find("img", class_="mdl-img__visual")
             image_url = image_tag["src"] if image_tag else ""
 
@@ -77,8 +95,11 @@ def fetch_and_send_rss(rss_url, webhook_url):
 
         response = requests.post(webhook_url, json=data)
         response.raise_for_status()
-    else:
-        print("No new entries found in the RSS feed.")
+
+    # 最新のエントリーIDを保存
+    latest_ids = [entry.id for entry in feed.entries[:10]]
+    with open(state_file, 'w') as f:
+        json.dump(latest_ids, f)
 
 
 if __name__ == "__main__":
@@ -92,4 +113,5 @@ if __name__ == "__main__":
         print("WEBHOOK_URL environment variable is not set.")
         sys.exit(1)
 
-    fetch_and_send_rss(rss_url, webhook_url)
+    state_file = os.path.join(os.path.dirname(__file__), f"{rss_url.split('/')[-2]}_state.json")
+    fetch_and_send_rss(rss_url, webhook_url, state_file)
