@@ -3,9 +3,6 @@ import requests
 import sys
 import os
 from bs4 import BeautifulSoup
-from dotenv import load_dotenv
-
-load_dotenv()
 
 
 def fetch_and_send_rss(rss_url, webhook_url):
