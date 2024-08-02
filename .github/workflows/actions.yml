@@ -44,7 +44,6 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "action@github.com"
-          git remote set-url origin ${{ github.repository }}
           git add news_state.json topics_state.json
           git commit -m "Update state files"
           git push
