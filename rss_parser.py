@@ -55,7 +55,7 @@ def fetch_and_send_rss(rss_url, webhook_url):
             }
         else:
             soup = BeautifulSoup(
-                latest_entry.get("content")[0]["value"], "html.parser"
+                latest_entry.get("summary")[0]["value"], "html.parser"
             )
             plain_text_summary = soup.get_text()
             image_tag = soup.find("img", class_="mdl-img__visual")
