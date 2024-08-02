@@ -40,8 +40,9 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
         print("No new entries to process.")
         return
 
-    # 新しいエントリーのIDを先に保存
-    latest_ids = [entry.id for entry in feed.entries[:10]]
+    # 新しいエントリーのIDを既存のリストに追加して保存
+    latest_ids = [entry.id for entry in new_entries] + last_entries
+    latest_ids = latest_ids[:100]  # 必要に応じて保存するIDの数を調整
     with open(state_file, "w") as f:
         json.dump(latest_ids, f, ensure_ascii=False, indent=4)
 
@@ -112,22 +113,23 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
                 ]
             }
 
-        send_request_with_retry(webhook_url, data)
+        # Webhookに送信前に確認
+        print(json.dumps(data, ensure_ascii=False, indent=4))
+        # コメントを外すと実際に送信
+        # send_request_with_retry(webhook_url, data)
         time.sleep(1 / 50)  # 1秒間に50リクエストを超えないようにする
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python rss_parser.py <RSS_URL>")
+    if len(sys.argv) != 3:
+        print("Usage: python rss_parser.py <RSS_URL> <STATE_FILE>")
         sys.exit(1)
 
     rss_url = sys.argv[1]
+    state_file = sys.argv[2]
     webhook_url = os.getenv("WEBHOOK_URL")
     if not webhook_url:
         print("WEBHOOK_URL environment variable is not set.")
         sys.exit(1)
 
-    # ファイル名部分を取得して拡張子を除去
-    file_name = os.path.splitext(os.path.basename(rss_url))[0]
-    state_file = os.path.join(os.path.dirname(__file__), f"{file_name}_state.json")
     fetch_and_send_rss(rss_url, webhook_url, state_file)
