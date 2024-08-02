@@ -39,7 +39,8 @@ def fetch_and_send_rss(rss_url, webhook_url):
 
         entry_info = info.get(category, info["トピックス"])
 
-        if "news" in link:
+        if category == "トピックス":
+            plain_text_summary = BeautifulSoup(summary, "html.parser").get_text()
             data = {
                 "embeds": [
                     {
@@ -50,13 +51,12 @@ def fetch_and_send_rss(rss_url, webhook_url):
                             "name": f"{category.capitalize()}",
                             "icon_url": entry_info["icon_url"],
                         },
+                        "description": plain_text_summary,
                     }
                 ]
             }
         else:
-            soup = BeautifulSoup(
-                latest_entry.get("summary")[0]["value"], "html.parser"
-            )
+            soup = BeautifulSoup(latest_entry.get("content")[0]["value"], "html.parser")
             plain_text_summary = soup.get_text()
             image_tag = soup.find("img", class_="mdl-img__visual")
             image_url = image_tag["src"] if image_tag else ""
@@ -68,11 +68,11 @@ def fetch_and_send_rss(rss_url, webhook_url):
                         "title": title,
                         "url": link,
                         "author": {
-                            "name": "トピックス",
+                            "name": f"{category.capitalize()}",
                             "icon_url": entry_info["icon_url"],
                         },
                         "description": plain_text_summary,
-                        "image": {"url": image_url},
+                        "image": {"url": image_url} if image_url else {},
                     }
                 ]
             }
