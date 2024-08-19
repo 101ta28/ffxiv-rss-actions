@@ -51,7 +51,7 @@ jobs:
       - name: Check for changes
         id: check_changes
         run: |
-          git add news_state.json topics_state.json
+          git add news_state.json topics_state.json atom_state.json
           if git diff-index --quiet HEAD --; then
             echo "No changes detected"
             echo "no_changes=true" >> $GITHUB_ENV
