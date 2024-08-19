@@ -68,6 +68,10 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
                     "icon_url": "https://lds-img.finalfantasyxiv.com/h/a/dFnS0OBVXIsmB74L65R7VHlpd8.png",
                     "color": 7051581,
                 },
+                "公式ブログ": {
+                    "icon_url": "https://lds-img.finalfantasyxiv.com/h/W/_v7zlp4yma56rKwd8pIzU8wGFc.png",
+                    "color": 25531,
+                },
                 "トピックス": {
                     "icon_url": "https://lds-img.finalfantasyxiv.com/h/W/_v7zlp4yma56rKwd8pIzU8wGFc.png",
                     "color": 13404201,
@@ -76,12 +80,12 @@ def fetch_and_send_rss(rss_url, webhook_url, state_file):
 
             entry_info = info.get(category, info["トピックス"])
 
-            if category == "トピックス":
+            if category == "トピックス" or category == "公式ブログ":
                 plain_text_summary = BeautifulSoup(summary, "html.parser").get_text()
                 soup = BeautifulSoup(entry.get("content")[0]["value"], "html.parser")
                 image_tag = soup.find("img", class_="mdl-img__visual")
                 image_url = image_tag["src"] if image_tag else ""
-                
+
                 data = {
                     "embeds": [
                         {
