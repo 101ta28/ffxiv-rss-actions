@@ -22,7 +22,7 @@ def save_latest_entries(rss_url, state_file):
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:
-        print("Usage: python save_entries.py <RSS_URL>")
+        print("Usage: python state_creator.py <RSS_URL>")
         sys.exit(1)
 
     rss_url = sys.argv[1]
