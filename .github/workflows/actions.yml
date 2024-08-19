@@ -40,6 +40,14 @@ jobs:
         run: |
           python rss_parser.py "$RSS_URL" "$STATE_FILE"
 
+      - name: Fetch and send RSS Blog
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+          RSS_URL: https://jp.finalfantasyxiv.com/blog/atom.xml
+          STATE_FILE: atom_state.json
+        run: |
+          python rss_parser.py "$RSS_URL" "$STATE_FILE"
+
       - name: Check for changes
         id: check_changes
         run: |
