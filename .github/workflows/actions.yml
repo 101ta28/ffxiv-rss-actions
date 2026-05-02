@@ -3,6 +3,9 @@ on:
   schedule:
     - cron: "*/15 * * * *"
   workflow_dispatch:
+concurrency:
+  group: ffxiv-rss-actions-${{ github.ref }}
+  cancel-in-progress: false
 permissions:
   contents: write
 jobs:
@@ -75,5 +78,11 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "action@github.com"
           git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+          git pull --rebase --autostash origin "${GITHUB_REF_NAME}"
+          git add news_state.json topics_state.json atom_state.json stage_schedule_state.json
+          if git diff-index --quiet HEAD --; then
+            echo "No changes detected after syncing with origin"
+            exit 0
+          fi
           git commit -m "Update state files"
           git push
