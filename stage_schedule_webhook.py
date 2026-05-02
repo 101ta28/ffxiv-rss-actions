@@ -13,6 +13,7 @@ STATE_FILE = Path("stage_schedule_state.json")
 WEBHOOK_URL_ENV = "DISCORD_STAGE_WEBHOOK_URL"
 STAGE_ZERO_TIME_ENV = "STAGE_ZERO_TIME"
 DEFAULT_STAGE_ZERO_TIME = "2026-05-03T00:00:00+09:00"
+PAYLOAD_VERSION = 2
 
 STAGES = [
     "パライストラ",
@@ -23,6 +24,16 @@ STAGES = [
     "ハルモニア戦争図書館",
     "レッド・サンズ",
 ]
+
+STAGE_COLORS = {
+    "パライストラ": 0xD4CC99,
+    "ヴォルカニック・ハート": 0xCC5533,
+    "ベイサイド・バトルグラウンド": 0x2D8FCB,
+    "クラウドナイン": 0x75B9E7,
+    "東方絡繰御殿": 0xB6742F,
+    "ハルモニア戦争図書館": 0x8367C7,
+    "レッド・サンズ": 0xB84535,
+}
 
 
 def parse_stage_zero_time():
@@ -61,20 +72,56 @@ def save_state(state):
     )
 
 
+def format_discord_time(value):
+    unix_time = int(value.timestamp())
+    return f"<t:{unix_time}:F>\n<t:{unix_time}:R>"
+
+
+def build_rotation_lines(current_stage):
+    lines = []
+    for number, stage in enumerate(STAGES, start=1):
+        marker = "▶" if stage == current_stage else " "
+        stage_name = f"**{stage}**" if stage == current_stage else stage
+        lines.append(f"`{marker} {number}` {stage_name}")
+
+    return "\n".join(lines)
+
+
 def build_stage_payload(current_stage, next_stage, next_change):
-    rotation_lines = "\n".join(
-        f"{number}. {stage}" for number, stage in enumerate(STAGES, start=1)
-    )
+    rotation_lines = build_rotation_lines(current_stage)
     return {
-        "content": (
-            "現在のステージスケジュール\n\n"
-            f"現在: {current_stage}\n"
-            f"次回: {next_stage}\n"
-            f"更新予定: {next_change.strftime('%Y-%m-%d %H:%M')} JST\n\n"
-            "ローテーション:\n"
-            f"{rotation_lines}\n"
-            "（先頭に戻る）"
-        ),
+        "content": "",
+        "embeds": [
+            {
+                "title": "PvP ステージスケジュール",
+                "description": "クリスタルコンフリクトの現在ステージと次回ステージです。",
+                "color": STAGE_COLORS.get(current_stage, 0xD4CC99),
+                "fields": [
+                    {
+                        "name": "現在",
+                        "value": f"**{current_stage}**",
+                        "inline": True,
+                    },
+                    {
+                        "name": "次回",
+                        "value": next_stage,
+                        "inline": True,
+                    },
+                    {
+                        "name": "更新予定",
+                        "value": format_discord_time(next_change),
+                        "inline": False,
+                    },
+                    {
+                        "name": "ローテーション",
+                        "value": rotation_lines,
+                        "inline": False,
+                    },
+                ],
+                "footer": {"text": "60分ごとにローテーション"},
+                "timestamp": datetime.now(JST).astimezone(timezone.utc).isoformat(),
+            }
+        ],
         "allowed_mentions": {"parse": []},
     }
 
@@ -112,7 +159,11 @@ def main():
     rotation_key = next_change.strftime("%Y-%m-%dT%H:%M:%S%z")
     state = load_state()
 
-    if state.get("message_id") and state.get("last_rotation_key") == rotation_key:
+    if (
+        state.get("message_id")
+        and state.get("last_rotation_key") == rotation_key
+        and state.get("payload_version") == PAYLOAD_VERSION
+    ):
         print("Stage schedule message is already current.")
         return
 
@@ -131,6 +182,7 @@ def main():
             "last_rotation_key": rotation_key,
             "current_stage": current_stage,
             "next_stage": next_stage,
+            "payload_version": PAYLOAD_VERSION,
             "updated_at": datetime.now(JST).strftime("%Y-%m-%dT%H:%M:%S%z"),
         }
     )
