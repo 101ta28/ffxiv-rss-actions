@@ -1,7 +1,7 @@
 name: ffxiv-rss-actions
 on:
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "7,27,47 * * * *"
   workflow_dispatch:
 concurrency:
   group: ffxiv-rss-actions-${{ github.ref }}
@@ -27,6 +27,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install feedparser requests beautifulsoup4
 
+      - name: Update PvP stage schedule message
+        env:
+          DISCORD_STAGE_WEBHOOK_URL: ${{ secrets.DISCORD_STAGE_WEBHOOK_URL }}
+          STAGE_ZERO_TIME: ${{ vars.STAGE_ZERO_TIME }}
+        run: |
+          python stage_schedule_webhook.py
+
       - name: Fetch and send RSS News
         env:
           WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
@@ -50,13 +57,6 @@ jobs:
           STATE_FILE: atom_state.json
         run: |
           python rss_parser.py "$RSS_URL" "$STATE_FILE"
-
-      - name: Update PvP stage schedule message
-        env:
-          DISCORD_STAGE_WEBHOOK_URL: ${{ secrets.DISCORD_STAGE_WEBHOOK_URL }}
-          STAGE_ZERO_TIME: ${{ vars.STAGE_ZERO_TIME }}
-        run: |
-          python stage_schedule_webhook.py
 
       - name: Check for changes
         id: check_changes
