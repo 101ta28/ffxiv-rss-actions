@@ -4,5 +4,9 @@
     "current_stage": "ヴォルカニック・ハート",
     "next_stage": "ベイサイド・バトルグラウンド",
     "payload_version": 2,
+<<<<<<< Updated upstream
     "updated_at": "2026-07-21T02:12:12+0900"
+=======
+    "updated_at": "2026-07-21T02:12:29+0900"
+>>>>>>> Stashed changes
 }
